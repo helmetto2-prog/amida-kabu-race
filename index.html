@@ -981,9 +981,37 @@ function renderPraise(){
   }
 }
 
+// ── v08：タイトル画面を作り直し：ロゴ（太字・ふちどり・グラデーション・1文字ずつ登場）と、明滅するスタートの帯 ──
+function coolLogo(text,cx,y,size,t,o){ o=o||{};
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.lineJoin='round';
+  ctx.font='900 '+size+'px '+(o.font||'"Yu Gothic UI","Hiragino Sans","Meiryo","Segoe UI",sans-serif');
+  const chars=[...text], ws=chars.map(ch=>ctx.measureText(ch).width), total=ws.reduce((p,q)=>p+q,0);
+  const k=(o.maxW&&total>o.maxW)?o.maxW/total:1;                       // はみ出すときは縮める
+  let x=cx-total*k/2; const c=o.cols||['#fff8d2','#ffd84f','#ff8a2e'];
+  chars.forEach((ch,i)=>{ const e=Math.max(0,Math.min(1,(t-(o.delay==null?0.1:o.delay)-i*0.07)/0.45));
+    const back=1+2.70158*Math.pow(e-1,3)+1.70158*Math.pow(e-1,2), bob=Math.sin(t*2.2-i*0.55)*(o.bob==null?3:o.bob)*e;
+    ctx.save(); ctx.translate(x+ws[i]*k/2, y+bob-(1-e)*40); ctx.scale(Math.max(0.001,back*k),Math.max(0.001,back*k)); ctx.globalAlpha=e;
+    ctx.shadowColor=o.glow||'rgba(255,200,90,0.9)'; ctx.shadowBlur=22;
+    ctx.strokeStyle=o.edge||'#1b1145'; ctx.lineWidth=size*0.2; ctx.strokeText(ch,0,0);
+    ctx.shadowBlur=0; ctx.strokeStyle=o.rim||'#ffffff'; ctx.lineWidth=size*0.08; ctx.strokeText(ch,0,0);
+    const g=ctx.createLinearGradient(0,-size*0.9,0,size*0.12);
+    g.addColorStop(0,c[0]); g.addColorStop(0.45,c[1]); g.addColorStop(1,c[2]); ctx.fillStyle=g; ctx.fillText(ch,0,0);
+    ctx.restore(); x+=ws[i]*k; });
+  ctx.restore(); }
+function coolStart(label,cx,y,w,h,t,o){ o=o||{}; const p=0.5+0.5*Math.sin(t*3.2), x=cx-w/2, r=h/2, c=o.cols||['#ffe58a','#ffb52e'];
+  ctx.save(); ctx.shadowColor=o.glow||'rgba(255,210,90,0.95)'; ctx.shadowBlur=10+14*p;
+  const g=ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,c[0]); g.addColorStop(1,c[1]);
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  ctx.fillStyle=g; ctx.fill(); ctx.shadowBlur=0; ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.fillStyle=o.ink||'#3a2400'; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.font='900 '+Math.round(h*0.42)+'px "Yu Gothic UI","Meiryo","Segoe UI",sans-serif';
+  ctx.fillText(label,cx,y+h*0.65); ctx.restore(); }
 function renderTitle(){
-  ctx.textAlign='center';
-  ctx.fillStyle='#fff'; ctx.font='bold 34px "Segoe UI"'; ctx.fillText('📈 あみだ株レース 🏁', W/2, 96);
+  const tt=clock()/1000; ctx.textAlign='center';
+  ctx.font='bold 12px "Segoe UI",sans-serif'; ctx.fillStyle='rgba(160,220,255,0.9)';
+  { const s='AMIDA STOCK RACE', st=12; [...s].forEach((ch,i)=>ctx.fillText(ch, W/2-(s.length-1)*st/2+i*st, 46)); }
+  coolLogo('あみだ株レース', W/2, 98, 48, tt, {maxW:W-110, cols:['#fffbe0','#ffd54a','#ff8a1e'], edge:'#0b1440', glow:'rgba(255,200,70,0.9)'});
+  ctx.font='30px "Segoe UI Emoji","Segoe UI",sans-serif'; ctx.fillStyle='#fff'; ctx.fillText('📈', 34, 96+Math.sin(tt*2.4)*3); ctx.fillText('🏁', W-34, 96+Math.sin(tt*2.4+1.5)*3);
   ctx.fillStyle='#9fb0e8'; ctx.font='12px "Segoe UI"';
   ctx.fillText('日経225全銘柄＋米国スター株15（計240銘柄）から6銘柄が出走！', W/2, 124);
   ctx.fillText('投資力（PER・PBR・配当・ROEから算出）が高いほど落下スピードUP！', W/2, 142);
@@ -1019,11 +1047,7 @@ function renderTitle(){
 
   // スタートボタン
   const by=628;
-  rrect(120, by, 240, 52, 26);
-  const blink=(clock()/500|0)%2===0;
-  ctx.fillStyle=blink?'#ffd54a':'#e0b83a'; ctx.fill();
-  ctx.fillStyle='#332'; ctx.font='bold 22px "Segoe UI"';
-  ctx.fillText('🏁 レーススタート', W/2, by+34);
+  coolStart('🏁 レーススタート', W/2, by, 260, 54, tt);
 
   ctx.fillStyle='#8aa'; ctx.font='12px "Segoe UI"';
   ctx.fillText('予想なしでもスタートできます（Spaceキーでも可）', W/2, by+76);
